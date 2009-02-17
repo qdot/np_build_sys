@@ -76,6 +76,21 @@ ENDFUNCTION(BUILD_EXE)
 # Fast Math Option
 ######################################################################################
 
+MACRO(OPTION_LOG4CXX DEFAULT)
+  OPTION(USE_LOG4CXX "Use log4cxx output if library is available" ${DEFAULT})
+
+  IF(USE_LOG4CXX)
+	FIND_PACKAGE(Log4Cxx REQUIRED)	
+	MESSAGE(STATUS "Turning on log4cxx logging capabilities for ${CMAKE_PROJECT_NAME}")
+  ELSE(USE_LOG4CXX)
+	MESSAGE(STATUS "NOT Turning on log4cxx logging capabilities for ${CMAKE_PROJECT_NAME}")
+  ENDIF(USE_LOG4CXX)
+ENDMACRO(OPTION_LOG4CXX)
+
+######################################################################################
+# Fast Math Option
+######################################################################################
+
 MACRO(OPTION_FAST_MATH DEFAULT)
   OPTION(FAST_MATH "Use -ffast-math for GCC 4.0" ${DEFAULT})
 
@@ -213,6 +228,9 @@ ENDMACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD)
 ######################################################################################
 
 MACRO(INITIALIZE_BUILD)
+
+  #Add the find subdirectory, so we can keep our repository nice and tidy
+  LIST(APPEND CMAKE_MODULE_PATH ${NP_MODULE_DIR}/find)
 
   MACRO_ENSURE_OUT_OF_SOURCE_BUILD()
 
