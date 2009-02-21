@@ -1,4 +1,71 @@
 ######################################################################################
+# Parse Arguments Macro (for named argument building)
+######################################################################################
+
+#taken from http://www.cmake.org/Wiki/CMakeMacroParseArguments
+
+MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
+  SET(DEFAULT_ARGS)
+  FOREACH(arg_name ${arg_names})    
+    SET(${prefix}_${arg_name})
+  ENDFOREACH(arg_name)
+  FOREACH(option ${option_names})
+    SET(${prefix}_${option} FALSE)
+  ENDFOREACH(option)
+
+  SET(current_arg_name DEFAULT_ARGS)
+  SET(current_arg_list)
+  FOREACH(arg ${ARGN})            
+    SET(larg_names ${arg_names})    
+    LIST(FIND larg_names "${arg}" is_arg_name)                   
+    IF (is_arg_name GREATER -1)
+      SET(${prefix}_${current_arg_name} ${current_arg_list})
+      SET(current_arg_name ${arg})
+      SET(current_arg_list)
+    ELSE (is_arg_name GREATER -1)
+      SET(loption_names ${option_names})    
+      LIST(FIND loption_names "${arg}" is_option)            
+      IF (is_option GREATER -1)
+	     SET(${prefix}_${arg} TRUE)
+      ELSE (is_option GREATER -1)
+	     SET(current_arg_list ${current_arg_list} ${arg})
+      ENDIF (is_option GREATER -1)
+    ENDIF (is_arg_name GREATER -1)
+  ENDFOREACH(arg)
+  SET(${prefix}_${current_arg_name} ${current_arg_list})
+ENDMACRO(PARSE_ARGUMENTS)
+MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
+  SET(DEFAULT_ARGS)
+  FOREACH(arg_name ${arg_names})    
+    SET(${prefix}_${arg_name})
+  ENDFOREACH(arg_name)
+  FOREACH(option ${option_names})
+    SET(${prefix}_${option} FALSE)
+  ENDFOREACH(option)
+
+  SET(current_arg_name DEFAULT_ARGS)
+  SET(current_arg_list)
+  FOREACH(arg ${ARGN})            
+    SET(larg_names ${arg_names})    
+    LIST(FIND larg_names "${arg}" is_arg_name)                   
+    IF (is_arg_name GREATER -1)
+      SET(${prefix}_${current_arg_name} ${current_arg_list})
+      SET(current_arg_name ${arg})
+      SET(current_arg_list)
+    ELSE (is_arg_name GREATER -1)
+      SET(loption_names ${option_names})    
+      LIST(FIND loption_names "${arg}" is_option)            
+      IF (is_option GREATER -1)
+	     SET(${prefix}_${arg} TRUE)
+      ELSE (is_option GREATER -1)
+	     SET(current_arg_list ${current_arg_list} ${arg})
+      ENDIF (is_option GREATER -1)
+    ENDIF (is_arg_name GREATER -1)
+  ENDFOREACH(arg)
+  SET(${prefix}_${current_arg_name} ${current_arg_list})
+ENDMACRO(PARSE_ARGUMENTS)
+
+######################################################################################
 # Compile flag array building macro
 ######################################################################################
 
@@ -13,32 +80,38 @@ MACRO(SET_COMPILE_FLAGS TARGET)
 ENDMACRO(SET_COMPILE_FLAGS)
 
 ######################################################################################
-# Generalized library building function for all C++ libraries
+# Generalized library building function for libraries
 ######################################################################################
 
-FUNCTION(BUILD_LIB LIB_NAME LIB_TYPES SRCS LIB_CXX_FLAGS LINK_LIBS LIB_LINK_FLAGS)
-  FOREACH(LIB_TYPE ${LIB_TYPES})
-    SET(CURRENT_LIB ${LIB_NAME}_${LIB_TYPE})
-    ADD_LIBRARY (${CURRENT_LIB} ${LIB_TYPE} ${SRCS})
+FUNCTION(NP_BUILD_LIB)
+  PARSE_ARGUMENTS(NP_LIB
+	"NAME;SOURCES;CXX_FLAGS;LINK_LIBS;LINK_FLAGS;DEPENDS"
+	""
+	${ARGN}
+	)
 
-    SET_TARGET_PROPERTIES (${CURRENT_LIB} PROPERTIES OUTPUT_NAME ${LIB_NAME})
+  FOREACH(LIB_TYPE ${NP_LIB_TYPES})
+    SET(CURRENT_LIB ${NP_LIB_NAME}_${LIB_TYPE})
+    ADD_LIBRARY (${CURRENT_LIB} ${LIB_TYPE} ${NP_LIB_SOURCES})
+	LIST(APPEND LIB_DEPEND_LIST ${CURRENT_LIB})
+    SET_TARGET_PROPERTIES (${CURRENT_LIB} PROPERTIES OUTPUT_NAME ${NP_LIB_NAME})
     SET_TARGET_PROPERTIES (${CURRENT_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
     #optional arguments
-    IF(LINK_LIBS)
-      FOREACH(LINK_LIB ${LINK_LIBS})
+	IF(NP_LIB_LINK_LIBS)
+      FOREACH(LINK_LIB ${NP_LIB_LINK_LIBS})
 		TARGET_LINK_LIBRARIES(${CURRENT_LIB} ${LINK_LIB})
-      ENDFOREACH(LINK_LIB)
-    ENDIF(LINK_LIBS)
+      ENDFOREACH(LINK_LIB ${NP_LIB_LINK_LIBS})
+	ENDIF(NP_LIB_LINK_LIBS)
 
     #cpp defines
-    IF(LIB_CXX_FLAGS)
-      SET_COMPILE_FLAGS(${CURRENT_LIB} ${LIB_CXX_FLAGS})
-    ENDIF(LIB_CXX_FLAGS)
+    IF(NP_LIB_CXX_FLAGS)
+      SET_COMPILE_FLAGS(${CURRENT_LIB} ${NP_LIB_CXX_FLAGS})
+    ENDIF(NP_LIB_CXX_FLAGS)
 
-    IF(LIB_LINK_FLAGS)
-      SET_TARGET_PROPERTIES(${CURRENT_LIB} PROPERTIES LINK_FLAGS ${LIB_LINK_FLAGS})
-    ENDIF(LIB_LINK_FLAGS)
+    IF(NP_LIB_LINK_FLAGS)
+      SET_TARGET_PROPERTIES(${CURRENT_LIB} PROPERTIES LINK_FLAGS ${NP_LIB_LINK_FLAGS})
+    ENDIF(NP_LIB_LINK_FLAGS)
 
     #installation for non-windows platforms
     IF(NOT WIN32)
@@ -49,28 +122,50 @@ FUNCTION(BUILD_LIB LIB_NAME LIB_TYPES SRCS LIB_CXX_FLAGS LINK_LIBS LIB_LINK_FLAG
     IF(APPLE)
       SET_TARGET_PROPERTIES(${CURRENT_LIB} PROPERTIES INSTALL_NAME_DIR ${LIBRARY_INSTALL_DIR})
     ENDIF(APPLE)
+
+	IF(NP_LIB_DEPENDS)
+	  ADD_DEPENDENCIES(${CURRENT_LIB} ${NP_LIB_DEPENDS})
+	ENDIF(NP_LIB_DEPENDS)
   ENDFOREACH(LIB_TYPE)
-ENDFUNCTION(BUILD_LIB)
+  SET(DEPEND_NAME "${NP_LIB_NAME}_DEPEND")
+  ADD_CUSTOM_TARGET(${DEPEND_NAME} DEPENDS ${LIB_DEPEND_LIST})
+  
+ENDFUNCTION(NP_BUILD_LIB)
 
 ######################################################################################
 # Generalized executable building function
 ######################################################################################
 
-FUNCTION(BUILD_EXE EXE_NAME SRCS CXX_FLAGS LINK_LIBS LINK_FLAGS SHOULD_INSTALL)
-  ADD_EXECUTABLE(${EXE_NAME} ${SRCS})
-  SET_TARGET_PROPERTIES (${EXE_NAME} PROPERTIES OUTPUT_NAME ${EXE_NAME})
-  IF(CXX_FLAGS)
-    SET_COMPILE_FLAGS(${EXE_NAME} ${CXX_FLAGS})
-  ENDIF(CXX_FLAGS)
-  IF(LINK_FLAGS)
-    SET_TARGET_PROPERTIES(${EXE_NAME} PROPERTIES LINK_FLAGS ${LINK_FLAGS})
-  ENDIF(LINK_FLAGS)
+FUNCTION(NP_BUILD_EXE)
+  PARSE_ARGUMENTS(NP_EXE
+	"NAME;SOURCES;CXX_FLAGS;LINK_LIBS;LINK_FLAGS;DEPENDS;SHOULD_INSTALL"
+	""
+	${ARGN}
+	)
+  
+  ADD_EXECUTABLE(${NP_EXE_NAME} ${NP_EXE_SOURCES})
+  SET_TARGET_PROPERTIES (${NP_EXE_NAME} PROPERTIES OUTPUT_NAME ${NP_EXE_NAME})
 
-  TARGET_LINK_LIBRARIES(${EXE_NAME} ${LINK_LIBS})
+  IF(NP_EXE_CXX_FLAGS)
+    SET_COMPILE_FLAGS(${NP_EXE_NAME} ${NP_EXE_CXX_FLAGS})
+  ENDIF(NP_EXE_CXX_FLAGS)
+
+  IF(NP_EXE_LINK_FLAGS)
+    SET_TARGET_PROPERTIES(${NP_EXE_NAME} PROPERTIES LINK_FLAGS ${NP_EXE_LINK_FLAGS})
+  ENDIF(NP_EXE_LINK_FLAGS)
+  
+  IF(NP_EXE_LINK_LIBS)
+	TARGET_LINK_LIBRARIES(${NP_EXE_NAME} ${NP_EXE_LINK_LIBS})
+  ENDIF(NP_EXE_LINK_LIBS)
+
   IF(NOT WIN32 AND SHOULD_INSTALL)
-    INSTALL(TARGETS ${EXE_NAME} RUNTIME DESTINATION ${RUNTIME_INSTALL_DIR})
+    INSTALL(TARGETS ${NP_EXE_NAME} RUNTIME DESTINATION ${RUNTIME_INSTALL_DIR})
   ENDIF(NOT WIN32 AND SHOULD_INSTALL)
-ENDFUNCTION(BUILD_EXE)
+
+  IF(NP_EXE_DEPENDS)
+	ADD_DEPENDENCIES(${NP_EXE_NAME} ${NP_EXE_DEPENDS})
+  ENDIF(NP_EXE_DEPENDS)
+ENDFUNCTION(NP_BUILD_EXE)
 
 ######################################################################################
 # Fast Math Option
@@ -112,7 +207,7 @@ MACRO(OPTION_LIBRARY_BUILD_STATIC DEFAULT)
   OPTION(BUILD_STATIC "Build static libraries" ${DEFAULT})
 
   IF(BUILD_STATIC)
-	SET(BUILD_TYPES ${BUILD_TYPES} STATIC)
+	LIST(APPEND NP_LIB_TYPES STATIC)
 	MESSAGE(STATUS "Building Static Libraries for ${CMAKE_PROJECT_NAME}")
   ELSE(BUILD_STATIC)
   	MESSAGE(STATUS "NOT Building Static Libraries for ${CMAKE_PROJECT_NAME}")
@@ -123,7 +218,7 @@ MACRO(OPTION_LIBRARY_BUILD_SHARED DEFAULT)
   OPTION(BUILD_SHARED "Build shared libraries" ${DEFAULT})
 
   IF(BUILD_SHARED)
-	SET(BUILD_TYPES ${BUILD_TYPES} SHARED)
+	LIST(APPEND NP_LIB_TYPES SHARED)
 	MESSAGE(STATUS "Building Shared Libraries for ${CMAKE_PROJECT_NAME}")
   ELSE(BUILD_SHARED)
   	MESSAGE(STATUS "NOT Building Shared Libraries for ${CMAKE_PROJECT_NAME}")
@@ -181,7 +276,7 @@ ENDMACRO(OPTION_GPROF)
 MACRO(OPTION_ARCH_OPTS DEFAULT)
   OPTION(ARCH_OPTS "Find and use architecture optimizations" ${DEFAULT})
   IF(ARCH_OPTS)
- 	EXECUTE_PROCESS(COMMAND "${CMAKE_MODULE_PATH}/scripts/gcccpuopt.sh" RESULT_VARIABLE CPU_RESULT OUTPUT_VARIABLE CPU_OPT ERROR_VARIABLE CPU_ERR OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+ 	EXECUTE_PROCESS(COMMAND "${NP_MODULE_DIR}/scripts/gcccpuopt.sh" RESULT_VARIABLE CPU_RESULT OUTPUT_VARIABLE CPU_OPT ERROR_VARIABLE CPU_ERR OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
 	MESSAGE(STATUS "Using Processor optimizations for ${CMAKE_PROJECT_NAME}: ${CPU_OPT}")
 	SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CPU_OPT}")
 	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CPU_OPT}")
@@ -197,7 +292,7 @@ ENDMACRO(OPTION_ARCH_OPTS)
 MACRO(OPTION_CREATE_VERSION_FILE DEFAULT OUTPUT_PATH)
   OPTION(CREATE_VERSION_FILE "Creates a version.cc file using the setlocalversion script" ${DEFAULT})
   IF(CREATE_VERSION_FILE)
- 	EXECUTE_PROCESS(COMMAND "${CMAKE_MODULE_PATH}/scripts/setlocalversion.sh" OUTPUT_FILE ${OUTPUT_PATH})
+ 	EXECUTE_PROCESS(COMMAND "${NP_MODULE_DIR}/scripts/setlocalversion.sh" OUTPUT_FILE ${OUTPUT_PATH})
 	MESSAGE(STATUS "Generating git information for ${CMAKE_PROJECT_NAME}")	
   ELSE(CREATE_VERSION_FILE)
 	MESSAGE(STATUS "NOT generating git information for ${CMAKE_PROJECT_NAME}")	
