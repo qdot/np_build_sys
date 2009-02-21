@@ -319,6 +319,47 @@ MACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD)
 ENDMACRO(MACRO_ENSURE_OUT_OF_SOURCE_BUILD)
 
 ######################################################################################
+# CPack Source Distro Setup
+######################################################################################
+
+MACRO(NP_CPACK_INFO)
+  PARSE_ARGUMENTS(NP_CPACK
+	"NAME;MAJOR_VERSION;MINOR_VERSION;BUILD_VERSION;VENDOR;DESCRIPTION"
+	""
+	${ARGN}
+	)
+  
+  # CPack version numbers for release tarball name.
+  SET(CPACK_PACKAGE_VERSION_MAJOR ${NP_CPACK_MAJOR_VERSION})
+  SET(CPACK_PACKAGE_VERSION_MINOR ${NP_CPACK_MINOR_VERSION})
+  SET(CPACK_PACKAGE_VERSION_PATCH ${NP_CPACK_BUILD_VERSION})
+  
+  SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${NP_CPACK_DESCRIPTION})
+  SET(CPACK_PACKAGE_VENDOR ${NP_CPACK_VENDOR})
+  #We'll always have a description file handy as README
+  SET(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/README.txt)
+  SET(CPACK_GENERATOR TGZ)
+  SET(NP_CPACK_VERSION ${NP_CPACK_MAJOR_VERSION}.${NP_CPACK_MINOR_VERSION}.${NP_CPACK_BUILD_VERSION})
+  SET(NP_CPACK_NAME ${NP_CPACK_NAME})
+
+  NP_CPACK_SOURCE_DISTRO()
+ENDMACRO(NP_CPACK_INFO)
+
+MACRO(NP_CPACK_SOURCE_DISTRO)
+  set(
+	CPACK_SOURCE_PACKAGE_FILE_NAME "${NP_CPACK_NAME}-${NP_CPACK_VERSION}-src"
+	CACHE INTERNAL "${NP_CPACK_NAME} Source Distribution"
+	)
+  set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
+  set(CPACK_SOURCE_IGNORE_FILES
+	"~$"
+	"^${PROJECT_SOURCE_DIR}/boneyard/"
+	"^${PROJECT_SOURCE_DIR}/.git.*"
+	"^${PROJECT_SOURCE_DIR}/build.*"
+	)
+ENDMACRO(NP_CPACK_SOURCE_DISTRO)
+
+######################################################################################
 # Initialize Build Function
 ######################################################################################
 
