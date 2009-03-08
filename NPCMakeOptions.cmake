@@ -129,3 +129,44 @@ MACRO(OPTION_CREATE_VERSION_FILE DEFAULT OUTPUT_PATH)
 	MESSAGE(STATUS "NOT generating git information for ${CMAKE_PROJECT_NAME}")	
   ENDIF(CREATE_VERSION_FILE)
 ENDMACRO(OPTION_CREATE_VERSION_FILE)
+
+######################################################################################
+# Look for accelerate, if found, add proper includes
+######################################################################################
+
+MACRO(OPTION_ACCELERATE_FRAMEWORK DEFAULT)
+  IF(APPLE)
+	OPTION(ACCELERATE_FRAMEWORK "Use Accelerate Framework for Math (Adds -D_ACCELERATE_ for compiling and Accelerate Framework linking)" ${DEFAULT})
+	IF(ACCELERATE_FRAMEWORK)
+	  FIND_LIBRARY(ACCELERATE_LIBRARY Accelerate REQUIRED)
+	  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_ACCELERATE_")
+	  MESSAGE(STATUS "Turning on Accelerate Framework for ${CMAKE_PROJECT_NAME}")
+	ELSE(ACCELERATE_FRAMEWORK)
+	  MESSAGE(STATUS "NOT turning on Accelerate Framework for ${CMAKE_PROJECT_NAME}")
+	ENDIF(ACCELERATE_FRAMEWORK)
+  ELSE(APPLE)
+	MESSAGE(STATUS "Accelerate Framework NOT AVAILABLE - Not compiling for OS X")
+  ENDIF(APPLE)
+ENDMACRO(OPTION_ACCELERATE_FRAMEWORK)
+
+######################################################################################
+# Force 32-bit, regardless of the platform we're on
+######################################################################################
+
+MACRO(OPTION_FORCE_32_BIT DEFAULT)
+  IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+	IF(CMAKE_COMPILER_IS_GNUCXX)
+	  OPTION(FORCE_32_BIT "Force compiler to use -m32 when compiling" ${DEFAULT})
+	  IF(FORCE_32_BIT)
+		MESSAGE(STATUS "Forcing 32-bit on 64-bit platform (using -m32)")
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+	  ELSE(FORCE_32_BIT)
+		MESSAGE(STATUS "Not forcing 32-bit on 64-bit platform")
+	  ENDIF(FORCE_32_BIT)
+	ELSE(CMAKE_COMPILER_IS_GNUCXX)
+	  MESSAGE(STATUS "Force 32 bit NOT AVAILABLE - Not using gnu compiler")
+	ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+  ELSE({CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+	MESSAGE(STATUS "Force 32 bit NOT AVAILABLE - Already on a 32 bit platform")
+  ENDIF(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+ENDMACRO(OPTION_FORCE_32_BIT)
