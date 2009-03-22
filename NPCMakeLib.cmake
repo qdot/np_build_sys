@@ -2,7 +2,7 @@
 # Add subdirectories
 ######################################################################################
 
-SET(FIVETEN_SCRIPT_DIR ${NP_CMAKE_DIR}/scripts)
+SET(NP_SCRIPT_DIR ${NP_CMAKE_DIR}/scripts)
 LIST(APPEND CMAKE_MODULE_PATH ${NP_CMAKE_DIR}/find)
 
 INCLUDE(${NP_CMAKE_DIR}/NPCMakeOptions.cmake)
@@ -54,5 +54,14 @@ MACRO(INITIALIZE_BUILD)
   MESSAGE(STATUS "Include Install Directory: ${INCLUDE_INSTALL_DIR}")
   MESSAGE(STATUS "Library Install Directory: ${LIBRARY_INSTALL_DIR}")
   MESSAGE(STATUS "Runtime Install Directory: ${RUNTIME_INSTALL_DIR}")
+
+  #Add uninstaller target. Handy!
+  CONFIGURE_FILE(
+	"${NP_SCRIPT_DIR}/cmake_uninstall.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+	IMMEDIATE @ONLY)
+
+  ADD_CUSTOM_TARGET(uninstall
+	"${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 ENDMACRO(INITIALIZE_BUILD)
