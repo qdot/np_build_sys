@@ -10,14 +10,13 @@
 
 IF(NOT LOG4CXX_FOUND)
 
-  FIND_PATH(LOG4CXX_INCLUDE_DIRS log4cxx/log4cxx.h
+  FIND_PATH(LOG4CXX_INCLUDE_DIR log4cxx/log4cxx.h
 	/usr/local/include
 	/usr/include
 	)
 
-  SET(LOG4CXX_NAMES ${LOG4CXX_NAMES} log4cxx)
   FIND_LIBRARY(LOG4CXX_LIBRARY
-	NAMES ${LOG4CXX_NAMES}
+	NAMES log4cxx
 	PATHS /usr/lib /usr/local/lib
 	)
 
