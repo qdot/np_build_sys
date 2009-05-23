@@ -49,9 +49,13 @@
 #                       Report details of unrecognised CPUs.
 #   V0.97, 19 Dec 2008, Use prescott for Intel Atom (model 28).
 #                       Ensure all errors are output to stderr.
+#   V0.98, 24 Feb 2009, Actually Intel Atom (model 28) is core2 ISA compliant.
+#                       It's an in-order core (like i586) so mtune as such.
+#   V0.99, 30 Apr 2009, Intel Atom (model 28) is getting a corresponding "atom"
+#                       option in GCC 4.5
 
 if [ "$1" = "--version" ]; then
-    echo "0.97" && exit
+    echo "0.98" && exit
 fi
 
 # This table shows when -march options were introduced into _official_ gcc releases.
@@ -64,6 +68,7 @@ fi
 #   gcc-3.4.0 += k8,opteron,athlon64,athlon-fx, c3-2
 #   gcc-3.4.1 += pentium-m, pentium3m, pentium4m, prescott, nocona
 #   gcc-4.3   += core2, amdfam10
+#   gcc-4.5   += atom
 
 [ -z "$CC" ] && CC=gcc
 
@@ -244,9 +249,11 @@ elif [ "$vendor_id" = "GenuineIntel" ]; then
             line="pentium2 pentiumpro pentium-mmx pentium i486 i386"
         elif [ \( $cpu_model -eq 9 \) -o \( $cpu_model -eq 13 \) ]; then #centrino
             line="pentium-m pentium4 pentium3 pentium2 pentiumpro pentium-mmx pentium i486 i386"
-        elif [ \( $cpu_model -eq 14 \) -o \( $cpu_model -eq 28 \) ]; then #Core or Atom
+        elif [ \( $cpu_model -eq 14 \) ]; then #Core
             line="prescott pentium-m pentium4 pentium3 pentium2 pentiumpro pentium-mmx pentium i486 i386"
-        elif [ $cpu_model -ge 15 ]; then #Core 2
+        elif [ $cpu_model -eq 28 ]; then #Atom
+            line="atom core2 pentium-m pentium4 pentium3 pentium2 pentiumpro pentium-mmx pentium i486 i386"
+        elif [ $cpu_model -ge 15 ]; then #Core2
             line="core2 pentium-m pentium4 pentium3 pentium2 pentiumpro pentium-mmx pentium i486 i386"
         elif [ \( $cpu_model -ge 7 \) -a \( $cpu_model -le 11 \) ]; then
             line="pentium3 pentium2 pentiumpro pentium-mmx pentium i486 i386"
@@ -268,6 +275,20 @@ Unrecognised CPU. Please email the following to: P@draigBrady.com
 fi
 
 [ -z "$_CFLAGS" ] && _CFLAGS="-march=`try_line "$line"`"
+
+#The Atom CPU supports the full core2 instruction set,
+#but it's an in-order core, the last one of those being the i586.
+#Therefore if gcc hasn't explicit support for the Atom,
+#tune it for the i586 architecture.
+if ! echo "$_CFLAGS" | grep -q "atom"; then #gcc hasn't specific Atom support
+    if echo "$line" | grep -q "core2"; then #atom ISA line
+        if [ $cpu_model -eq 28 ]; then      #atom
+            if echo "$_CFLAGS" | grep -E -q "(core2|pentium[^ ])"; then #gcc chose out of order arch
+                _CFLAGS="$_CFLAGS -mtune=pentium" #tune for last in-order core
+            fi
+        fi
+    fi
+fi
 
 #SSE is not used for floating point by default in gcc 32 bit
 #so turn that on here.
