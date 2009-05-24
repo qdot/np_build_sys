@@ -16,8 +16,33 @@ import os
 import re, operator
 import sys
 
+template_page = '''
+<HTML>
+<HEAD>
+<TITLE>Documentation</TITLE>
+</HEAD>
+<BODY>
+<UL>
+<LI>Asciidoc Documentation</LI>
+<UL>
+%s
+</UL>
+<LI>Doxygen Documentation</LI>
+<UL>
+%s
+</UL>
+</UL>
+</BODY>
+</HTML>
+'''
 
-def build_doc_index(asciidocs, doxyfiles):
+def build_doc_index(output_dir, asciidocs, doxyfiles):
+    out_file = open(os.path.join(output_dir, "index.html"), "w+")
+    asciidocs_list = ''.join(["<LI><A HREF='asciidoc/%s'>%s</A></LI>" % (os.path.split(doc)[-1], os.path.split(doc)[-1]) for doc in asciidocs])
+    if len(doxyfiles) is not 0:
+        doxygen_list = "<LI><A HREF='doxygen/html/index.html'>Doxygen Output</A></LI>"
+    out_file.write(template_page % (asciidocs_list, doxygen_list))
+    out_file.close()
     return
 
 def build_doxygen(filename, output_dir):
@@ -52,5 +77,6 @@ if __name__ == '__main__':
     files = dircache.listdir(options.dir)
     asciidocs = [build_asciidoc(os.path.join(options.dir, asciidoc_file), options.output) for asciidoc_file in filter(lambda x: os.path.splitext(x)[-1] == ".asciidoc", files)]
     doxyfile = [build_doxygen(os.path.join(options.dir, doxyfile), options.output) for doxyfile in filter(lambda x: os.path.split(x)[-1] == "Doxyfile", files)]
+    build_doc_index(options.output, asciidocs, doxyfile)
     sys.exit(0)
                      
