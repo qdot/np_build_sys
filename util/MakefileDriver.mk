@@ -27,7 +27,7 @@ doc-gen:
 	@$(BUILD_TARGET_SCRIPT) -c $*
 	@echo "Setting up build directory for $*"
 	mkdir -p $(shell $(BUILD_TARGET_SCRIPT) -b $*)
-	cd $(shell $(BUILD_TARGET_SCRIPT) -b $*) ; cmake -G $(shell $(BUILD_TARGET_SCRIPT) -g $*) -DFIVETEN_BUILD_PLATFORM=$* $(shell $(BUILD_TARGET_SCRIPT) -e $*) ../..
+	cd $(shell $(BUILD_TARGET_SCRIPT) -b $*) ; cmake -G $(shell $(BUILD_TARGET_SCRIPT) -g $*) -DNP_BUILD_PLATFORM=$* $(shell $(BUILD_TARGET_SCRIPT) -e $*) ../..
 
 clean-all:
 	rm -rf $(foreach target,$(shell $(BUILD_TARGET_SCRIPT) -a), $(shell $(BUILD_TARGET_SCRIPT) -b $(target)))
