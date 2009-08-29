@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Print the gcc cpu specific options appropriate for the current CPU
+# Print the gcc cpu specific options tailored for the current CPU
 
 # Author:
 #    http://www.pixelbeat.org/
@@ -53,9 +53,10 @@
 #                       It's an in-order core (like i586) so mtune as such.
 #   V0.99, 30 Apr 2009, Intel Atom (model 28) is getting a corresponding "atom"
 #                       option in GCC 4.5
+#   V0.99.3, 11 Aug 2009, Support for AMD Geode LX processor.
 
 if [ "$1" = "--version" ]; then
-    echo "0.98" && exit
+    echo "0.99.3" && exit
 fi
 
 # This table shows when -march options were introduced into _official_ gcc releases.
@@ -67,7 +68,7 @@ fi
 #   gcc-3.3   += winchip-c6, winchip2, c3
 #   gcc-3.4.0 += k8,opteron,athlon64,athlon-fx, c3-2
 #   gcc-3.4.1 += pentium-m, pentium3m, pentium4m, prescott, nocona
-#   gcc-4.3   += core2, amdfam10
+#   gcc-4.3   += core2, amdfam10, geode
 #   gcc-4.5   += atom
 
 [ -z "$CC" ] && CC=gcc
@@ -194,13 +195,17 @@ if [ "$vendor_id" = "AuthenticAMD" ]; then
             line="k6-2 k6"
         elif [ \( $cpu_model -eq 9 \) -o \( $cpu_model -eq 13 \) ]; then
             line="k6-3 k6-2 k6"
+        elif [ $cpu_model -eq 10 ]; then #geode LX
+            line="geode k6-2 k6"
+            #The LX supports 3dnowext in addition to the k6-2 instructions,
+            #however gcc doesn't support explicitly selecting that.
         fi
     elif [ $cpu_family -eq 6 ]; then
         if [ $cpu_model -le 3 ]; then
             line="athlon k6-3 k6-2 k6"
         elif [ $cpu_model -eq 4 ]; then
             line="athlon-tbird athlon k6-3 k6-2 k6"
-        elif [ $cpu_model -ge 6 ]; then #athlon-{4,xp,mp}
+        elif [ $cpu_model -ge 6 ]; then #athlon-{4,xp,mp} (also geode NX)
             line="athlon-4 athlon k6-3 k6-2 k6"
         fi
     elif [ $cpu_family -eq 15 ]; then #k8,opteron,athlon64,athlon-fx
